@@ -1,0 +1,4 @@
+events:
+  - name: TestPulse
+    displayName: Prueba háptica
+    description: Emite una vibración de prueba

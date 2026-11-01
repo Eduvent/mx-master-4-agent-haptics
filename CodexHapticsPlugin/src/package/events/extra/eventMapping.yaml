@@ -1,0 +1,3 @@
+haptics:
+  TestPulse:
+    DEFAULT: completed

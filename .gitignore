@@ -1,0 +1,13 @@
+.local/
+__pycache__/
+*.pyc
+CodexHapticsPlugin/bin/
+CodexHapticsPlugin/obj/
+tests/stop_reader/bin/
+tests/stop_reader/obj/
+tests/latency/bin/
+tests/latency/obj/
+
+# Generated machine-specific hook commands; commit the portable example instead.
+.codex/hooks.json
+.DS_Store
