@@ -12,20 +12,13 @@ Verificado en macOS con MX Master 4 y Logi Plugin Service 6.4.2. `Stop` signific
 - Python 3.8 o posterior para configurar las rutas y ejecutar las pruebas. El hook Python se conserva como alternativa y referencia de comparación.
 - Codex con soporte de hooks locales y el proyecto abierto como directorio de trabajo.
 
-## Compatibilidad por sistema operativo
+## Compatibilidad
 
-**La integración completa actual es para macOS. No es compatible con todos los sistemas operativos tal como está.**
+**Sistema operativo compatible actualmente: macOS.** La validación realizada fue en un equipo Apple Silicon con MX Master 4 y Logi Plugin Service 6.4.2; no implica que se hayan probado todas las versiones de macOS o arquitecturas.
 
-| Sistema | Estado del proyecto |
-| --- | --- |
-| macOS con Apple Silicon | Verificado en este equipo: hook Go, plugin y vibración física del MX Master 4. |
-| macOS con Intel | No probado. Hay que compilar el binario para la arquitectura del equipo y validar el conjunto con su instalación de Logi Plugin Service. |
-| Windows | No soportado por la implementación actual; requiere adaptar rutas, comandos y configuración, además de pruebas reales. |
-| Linux | Sin integración háptica implementada ni validada en este proyecto. Compilar el logger Go por separado no proporciona el servicio Logitech que necesita el plugin. |
+Las contribuciones para Windows y Linux son bienvenidas mediante forks, issues y pull requests. Hasta completar la validación en el sistema correspondiente y con un mouse físico, esos ports se consideran experimentales y no se anuncian como compatibles. Compilar Go o pasar pruebas automatizadas no basta para confirmar la vibración.
 
-Aunque Go y .NET permiten código multiplataforma, la implementación actual del plugin busca el `.link` y escribe su estado bajo `~/Library/Application Support/Logi/LogiPluginService`. El configurador usa quoting de shell POSIX, `/usr/bin/python3` para la alternativa Python y un nombre de binario sin `.exe`. El `.csproj` conserva rutas de Windows de la plantilla del SDK; eso no hace que la integración funcione en Windows.
-
-La [disponibilidad y los requisitos de Logi Options+](https://www.logitech.com/en-us/software/logi-options-plus) deben comprobarse para cada equipo; son distintos del soporte probado de este repositorio. Los pasos siguientes corresponden a macOS.
+Consulta la [guía de contribución y validación de ports](CONTRIBUTING.md), que explica qué pruebas aportar y cómo documentar la confirmación física.
 
 ## Instalación local de desarrollo en macOS
 
@@ -139,3 +132,7 @@ En 120 muestras alternadas por variante, el comando completo tuvo medianas de **
 ## Diagnóstico experimental de mensajes
 
 `hooks/observe_messages.py RUTA_AL_ROLLOUT .local/message-observation.jsonl --seconds 90` observa únicamente mensajes nuevos de un rollout local y guarda fecha, fase y presencia de signos de interrogación. No guarda el texto y no participa en la integración háptica. El formato de rollout es interno e inestable; este script es un diagnóstico temporal, no un detector de preguntas que requieran respuesta.
+
+## Contribuir
+
+Puedes crear un fork, abrir un issue o proponer una mejora mediante un pull request. También puedes compartir un port en desarrollo aunque todavía no tengas todas las pruebas: indica claramente qué funciona y qué falta validar. La declaración de compatibilidad con otro sistema se revisa con los criterios de [CONTRIBUTING.md](CONTRIBUTING.md).
