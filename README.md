@@ -12,9 +12,22 @@ Verificado en macOS con MX Master 4 y Logi Plugin Service 6.4.2. `Stop` signific
 - Python 3.8 o posterior para configurar las rutas y ejecutar las pruebas. El hook Python se conserva como alternativa y referencia de comparación.
 - Codex con soporte de hooks locales y el proyecto abierto como directorio de trabajo.
 
-La integración del plugin y sus rutas de instalación están preparadas para macOS; Windows no se ha validado.
+## Compatibilidad por sistema operativo
 
-## Instalación local de desarrollo
+**La integración completa actual es para macOS. No es compatible con todos los sistemas operativos tal como está.**
+
+| Sistema | Estado del proyecto |
+| --- | --- |
+| macOS con Apple Silicon | Verificado en este equipo: hook Go, plugin y vibración física del MX Master 4. |
+| macOS con Intel | No probado. Hay que compilar el binario para la arquitectura del equipo y validar el conjunto con su instalación de Logi Plugin Service. |
+| Windows | No soportado por la implementación actual; requiere adaptar rutas, comandos y configuración, además de pruebas reales. |
+| Linux | Sin integración háptica implementada ni validada en este proyecto. Compilar el logger Go por separado no proporciona el servicio Logitech que necesita el plugin. |
+
+Aunque Go y .NET permiten código multiplataforma, la implementación actual del plugin busca el `.link` y escribe su estado bajo `~/Library/Application Support/Logi/LogiPluginService`. El configurador usa quoting de shell POSIX, `/usr/bin/python3` para la alternativa Python y un nombre de binario sin `.exe`. El `.csproj` conserva rutas de Windows de la plantilla del SDK; eso no hace que la integración funcione en Windows.
+
+La [disponibilidad y los requisitos de Logi Options+](https://www.logitech.com/en-us/software/logi-options-plus) deben comprobarse para cada equipo; son distintos del soporte probado de este repositorio. Los pasos siguientes corresponden a macOS.
+
+## Instalación local de desarrollo en macOS
 
 Ejecuta desde la raíz del repositorio:
 
@@ -47,6 +60,49 @@ python3 hooks/configure_hooks.py --backend python
 ```
 
 La alternativa Python usa `/usr/bin/python3` en esta instalación macOS. Ambas opciones evitan ejecutar `git rev-parse` por evento y funcionan desde subdirectorios del proyecto.
+
+## Comprobar la instalación
+
+Primero confirma que la acción **Probar vibración** del plugin funciona. Después, desde la raíz del repositorio, puedes enviar un único evento de prueba con el mismo hook Go que usa Codex:
+
+```sh
+printf '%s\n' '{"hook_event_name":"Stop","tool_name":"manual-setup-test"}' | .local/bin/record-event
+```
+
+Es una prueba que debe activar una vibración física. La salida normal del hook es `{}`; revisa también si hay errores en stderr. Que el hook termine correctamente o aparezca `event_raised` demuestra pasos de software, pero la confirmación física es sentir el pulso.
+
+Finalmente envía un mensaje en Codex y espera a que termine la respuesta. Esto verifica el recorrido automático completo. Si la prueba anterior vibra pero el cierre de Codex no, revisa la confianza de los hooks y que el chat haya cargado la configuración nueva.
+
+## Después de reiniciar el equipo
+
+No necesitas recompilar ni ejecutar Go manualmente después de cada reinicio. El binario permanece en `.local/bin/record-event`; Codex lo inicia por evento y el proceso termina tras escribir el registro. Tampoco necesita una terminal abierta permanentemente.
+
+Logi Plugin Service sí debe estar activo en tu sesión: al arrancar carga el plugin mediante el `.link` persistente. Este proyecto no instala un agente de inicio, un servicio propio ni un watchdog que lo mantenga ejecutándose. El inicio automático depende de la instalación de Logitech y de los permisos de inicio/segundo plano de macOS.
+
+En el equipo de desarrollo se verificó que el agente de Logi Options+ tiene `RunAtLoad=true`. Eso confirma su configuración de inicio, pero no prueba que Logi Plugin Service arranque correctamente tras un reinicio completo. Ese ensayo de reinicio aún está pendiente.
+
+Después del próximo reinicio:
+
+1. Inicia sesión en macOS y deja que arranque el software Logitech.
+2. Abre Codex en este proyecto y termina un turno; debería vibrar sin lanzar el hook manualmente.
+3. Si no vibra, comprueba si Logi Plugin Service está activo. Puedes abrirlo desde Finder o ejecutar:
+
+   ```sh
+   open -a /Applications/Utilities/LogiPluginService.app
+   ```
+
+4. Repite la prueba manual anterior y luego un turno de Codex. Si abrir el servicio resuelve el problema, revisa el inicio automático y los permisos de segundo plano de Logitech en macOS. Evita añadir varios mecanismos de arranque que intenten cargarlo a la vez.
+
+Al reiniciar el servicio, el lector ignora los eventos anteriores: la prueba debe generar un `Stop` nuevo después de que el plugin esté listo. Para usarlo cada día, conserva el repositorio y su estructura de compilación; no borres `.local/bin`, muevas la carpeta o elimines el `.link` sin repetir la configuración correspondiente.
+
+## Si no vibra
+
+| Evidencia | Siguiente comprobación |
+| --- | --- |
+| El turno no añade un `Stop` nuevo al log | Revisar hooks habilitados/confiados, proyecto correcto y configuración cargada en el chat. |
+| Hay un `Stop` nuevo, pero el estado del plugin no cambia | Revisar que el servicio esté activo, el `.link` apunte al build correcto y no haya `load_error` u `observer_error`. |
+| El plugin muestra `event_raised`, pero no sientes el pulso | Probar la acción manual y revisar conexión/configuración háptica del mouse en Logitech; el estado no confirma por sí solo la vibración física. |
+| Funciona al abrir manualmente el servicio, pero falla tras reiniciar | Revisar el arranque de Logitech y sus permisos de segundo plano. |
 
 ## Funcionamiento y privacidad
 
