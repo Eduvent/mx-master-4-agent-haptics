@@ -1,0 +1,112 @@
+{
+  "date": "2026-11-01",
+  "platform": "macOS arm64, local .NET 10 SDK / system Python 3",
+  "method": {
+    "samples_per_mode": 60,
+    "random_seed": 42,
+    "inter_sample_delay_ms": [
+      17,
+      170
+    ],
+    "idle_window_seconds": 8,
+    "full_path_boundary": "shell launch to StopEventMonitor callback, excluding Logitech and physical vibration",
+    "resource_caveats": "Short idle windows include JIT/runtime noise; RSS comes from one process across modes and cannot isolate memory cost. Full-path idle_callbacks were not instrumented."
+  },
+  "detector": [
+    {
+      "mode": "poll250",
+      "samples": 60,
+      "median_ms": 169.8051,
+      "p95_ms": 226.0974,
+      "max_ms": 232.6227,
+      "idle_seconds": 8.0006616,
+      "idle_cpu_ms": 182.53,
+      "idle_alloc_bytes": 152640,
+      "idle_callbacks": 32,
+      "rss_bytes": 53985280
+    },
+    {
+      "mode": "poll25",
+      "samples": 60,
+      "median_ms": 12.5562,
+      "p95_ms": 25.6207,
+      "max_ms": 26.3815,
+      "idle_seconds": 8.0010033,
+      "idle_cpu_ms": 201.666,
+      "idle_alloc_bytes": 1415880,
+      "idle_callbacks": 320,
+      "rss_bytes": 59228160
+    },
+    {
+      "mode": "watcher",
+      "samples": 60,
+      "median_ms": 12.2634,
+      "p95_ms": 12.911,
+      "max_ms": 13.2363,
+      "idle_seconds": 8.001163,
+      "idle_cpu_ms": 0.748,
+      "idle_alloc_bytes": 0,
+      "idle_callbacks": 0,
+      "rss_bytes": 61095936
+    }
+  ],
+  "hook_process": [
+    {
+      "mode": "python_noop",
+      "samples": 60,
+      "median_ms": 18.577479,
+      "p95_ms": 19.666042,
+      "max_ms": 20.474375
+    },
+    {
+      "mode": "hook_direct",
+      "samples": 60,
+      "median_ms": 26.801291499999998,
+      "p95_ms": 28.832917,
+      "max_ms": 30.767834,
+      "to_record_median_ms": 24.872448,
+      "to_record_p95_ms": 26.763776
+    },
+    {
+      "mode": "hook_configured_shell",
+      "samples": 60,
+      "median_ms": 39.5167705,
+      "p95_ms": 41.643542,
+      "max_ms": 41.931,
+      "to_record_median_ms": 37.44704,
+      "to_record_p95_ms": 39.46496
+    }
+  ],
+  "full_path": [
+    {
+      "mode": "hook250",
+      "samples": 60,
+      "median_ms": 171.0029,
+      "p95_ms": 226.374,
+      "max_ms": 231.9184,
+      "idle_seconds": 8.0012377,
+      "idle_cpu_ms": 119.743,
+      "idle_alloc_bytes": 146528,
+      "idle_callbacks": null,
+      "rss_bytes": 68255744
+    },
+    {
+      "mode": "hookwatcher",
+      "samples": 60,
+      "median_ms": 66.0409,
+      "p95_ms": 84.6183,
+      "max_ms": 98.304,
+      "idle_seconds": 8.0016273,
+      "idle_cpu_ms": 8.552,
+      "idle_alloc_bytes": 36224,
+      "idle_callbacks": null,
+      "rss_bytes": 78102528
+    }
+  ],
+  "live_plugin": {
+    "test": "one synthetic Stop in the live event log",
+    "record_timestamp_to_post_RaiseEvent_ms": 14.909,
+    "status": "2026-11-01T18:03:48.2122520+00:00 event_raised",
+    "includes_physical_vibration_latency": false
+  }
+}

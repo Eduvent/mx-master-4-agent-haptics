@@ -22,8 +22,7 @@ con `/hooks` en Codex CLI. Requiere `/usr/bin/python3`; la ruta del script se
 resuelve desde Git, incluso si Codex inicia desde un subdirectorio.
 
 Los hooks registran metadatos permitidos en `.local/events.jsonl`, sin guardar
-mensajes, comandos ni argumentos. El plugin consulta nuevos registros cada
-250 ms y emite `TestPulse` por cada `Stop` completo; ignora el historial al iniciar.
+mensajes, comandos ni argumentos. El plugin detecta cambios de archivo, con una lectura de respaldo cada segundo y emite `TestPulse` por cada `Stop` completo; ignora el historial al iniciar.
 `Stop` significa fin del turno, no necesariamente éxito. `PermissionRequest`
 puede ocurrir con aprobación automática y no demuestra atención del usuario.
 
@@ -35,3 +34,18 @@ dotnet run --project tests/stop_reader/StopReaderTests.csproj -c Release
 El observador experimental `hooks/observe_messages.py` lee solo mensajes nuevos
 de un rollout local y guarda fecha, fase y presencia de interrogaciones sin texto.
 No participa en la vibración y no clasifica de forma fiable la atención humana.
+
+## Medición de detección
+
+Se compararon 60 muestras por variante: polling 250 ms (p50 169,8 ms), polling
+25 ms (12,6 ms) y notificaciones (12,3 ms). Se eligieron notificaciones más respaldo.
+Los resultados completos están en `tests/latency/results-2026-11-01.json`.
+
+```sh
+dotnet run --project tests/latency/Latency.csproj -c Release -- 60
+dotnet run --project tests/latency/Latency.csproj -c Release -- 60 hook250 hookwatcher
+```
+
+Usan logs temporales, sin vibraciones; las pruebas nativas de FSEvents requieren
+un entorno sin restricciones sobre notificaciones. Los tiempos terminan antes del
+transporte Logitech y la vibración física. Las ventanas cortas de CPU son orientativas.

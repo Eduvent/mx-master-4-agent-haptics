@@ -2,7 +2,6 @@ namespace Loupedeck.CodexHapticsPlugin
 {
     using System;
     using System.IO;
-    using System.Threading;
 
     // This class contains the plugin-level logic of the Loupedeck plugin.
 
@@ -10,9 +9,7 @@ namespace Loupedeck.CodexHapticsPlugin
     {
         private static readonly String StatusPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
             "Library", "Application Support", "Logi", "LogiPluginService", "CodexHaptics.status");
-        private StopEventReader _reader;
-        private Timer _pollTimer;
-        private readonly Object _pollLock = new();
+        private StopEventMonitor _monitor;
         // Gets a value indicating whether this is an API-only plugin.
         public override Boolean UsesApplicationApiOnly => true;
 
@@ -41,9 +38,8 @@ namespace Loupedeck.CodexHapticsPlugin
                     "Library", "Application Support", "Logi", "LogiPluginService", "Plugins", "CodexHapticsPlugin.link");
                 var pluginDir = File.ReadAllText(linkPath).Trim();
                 var logPath = Path.GetFullPath(Path.Combine(pluginDir, "..", "..", "..", ".local", "events.jsonl"));
-                this._reader = new StopEventReader(logPath);
-                this._pollTimer = new Timer(this.Poll, null, 250, 250);
-                WriteStatus("watching");
+                this._monitor = new StopEventMonitor(logPath, this.RaiseStops, this.ObserverError);
+                WriteStatus("watching_notifications_with_1000ms_reconciliation");
                 PluginLog.Info("Codex Stop observer started.");
             }
             catch (Exception error)
@@ -56,16 +52,8 @@ namespace Loupedeck.CodexHapticsPlugin
         // This method is called when the plugin is unloaded.
         public override void Unload()
         {
-            this._pollTimer?.Dispose();
-            this._pollTimer = null;
-        }
-
-        private void Poll(Object state)
-        {
-            if (!Monitor.TryEnter(this._pollLock)) return;
-            try { this.RaiseStops(this._reader.ReadNewStops()); }
-            catch (Exception error) { this.ObserverError(error); }
-            finally { Monitor.Exit(this._pollLock); }
+            this._monitor?.Dispose();
+            this._monitor = null;
         }
 
         private void RaiseStops(Int32 count)
