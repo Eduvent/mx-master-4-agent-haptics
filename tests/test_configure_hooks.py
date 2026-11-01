@@ -10,10 +10,34 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "hooks"))
-from configure_hooks import configure
+from configure_hooks import configure, configure_global_stop
 
 
 class ConfigureHookTest(unittest.TestCase):
+    def test_global_stop_preserves_unrelated_hooks_and_is_idempotent(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "repo"
+            user = Path(tmp) / "user"
+            (root / ".codex").mkdir(parents=True)
+            user.mkdir()
+            shutil.copy2(ROOT / ".codex/hooks.example.json", root / ".codex/hooks.example.json")
+            unrelated = {"hooks": [{"type": "command", "command": "other-command", "timeout": 9}]}
+            global_path = user / "hooks.json"
+            original = {"description": "keep", "hooks": {"SessionStart": [unrelated], "Stop": [unrelated]}}
+            global_path.write_text(json.dumps(original))
+            configure_global_stop(root, "python", user)
+            config = json.loads(global_path.read_text())
+            self.assertEqual(config["hooks"]["SessionStart"], [unrelated])
+            self.assertEqual(config["hooks"]["Stop"][0], unrelated)
+            self.assertEqual(len(config["hooks"]["Stop"]), 2)
+            local_path = root / ".codex/hooks.json"
+            self.assertNotIn("Stop", json.loads(local_path.read_text())["hooks"])
+            self.assertEqual(json.loads((user / "hooks.json.haptics-backup").read_text()), original)
+            stamps = [p.stat().st_mtime_ns for p in (global_path, local_path)]
+            configure_global_stop(root, "python", user)
+            configure(root, "python")
+            self.assertEqual(stamps, [p.stat().st_mtime_ns for p in (global_path, local_path)])
+
     def test_quoting_subdirectory_and_idempotence_preserve_other_hooks(self):
         with tempfile.TemporaryDirectory(prefix="haptics '$() ") as tmp:
             root = Path(tmp)

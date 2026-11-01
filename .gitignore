@@ -10,4 +10,5 @@ tests/latency/obj/
 
 # Generated machine-specific hook commands; commit the portable example instead.
 .codex/hooks.json
+.codex/hooks.json.haptics-backup
 .DS_Store
