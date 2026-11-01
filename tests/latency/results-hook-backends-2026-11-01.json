@@ -1,0 +1,127 @@
+{
+  "date": "2026-11-01",
+  "platform": "macOS arm64; system Python 3.9; Go 1.27.1; .NET 10 harness",
+  "active_configured_backend": "python_static",
+  "stage_1_remove_git": {
+    "samples_per_mode": 120,
+    "warmups_per_mode": 5,
+    "order": "interleaved, shuffled with seed 42",
+    "boundary": "spawn configured shell through process exit; timestamp metadata precedes file write",
+    "results": [
+      {
+        "mode": "legacy_python",
+        "samples": 120,
+        "median_ms": 36.822166499999994,
+        "p95_ms": 39.642917,
+        "max_ms": 44.441625,
+        "child_cpu_median_ms": 25.98900000000004,
+        "to_metadata_median_ms": 34.905984000000004
+      },
+      {
+        "mode": "python_static",
+        "samples": 120,
+        "median_ms": 28.49725,
+        "p95_ms": 30.5345,
+        "max_ms": 34.8655,
+        "child_cpu_median_ms": 25.860000000000216,
+        "to_metadata_median_ms": 26.612479999999998
+      }
+    ]
+  },
+  "stage_2_compare_go": {
+    "samples_per_mode": 120,
+    "warmups_per_mode": 5,
+    "order": "interleaved, shuffled with seed 42",
+    "boundary": "spawn configured shell through process exit; timestamp metadata precedes file write",
+    "results": [
+      {
+        "mode": "legacy_python",
+        "samples": 120,
+        "median_ms": 36.9958335,
+        "p95_ms": 41.818708,
+        "max_ms": 44.717208,
+        "child_cpu_median_ms": 26.099000000000096,
+        "to_metadata_median_ms": 35.093888
+      },
+      {
+        "mode": "python_static",
+        "samples": 120,
+        "median_ms": 28.6480625,
+        "p95_ms": 32.429542,
+        "max_ms": 64.695083,
+        "child_cpu_median_ms": 26.070999999999955,
+        "to_metadata_median_ms": 26.75968
+      },
+      {
+        "mode": "go_static",
+        "samples": 120,
+        "median_ms": 6.6621665,
+        "p95_ms": 7.525459,
+        "max_ms": 9.540292,
+        "child_cpu_median_ms": 4.6800000000001285,
+        "to_metadata_median_ms": 6.027392
+      }
+    ]
+  },
+  "full_path": [
+    {
+      "mode": "hookwatcher",
+      "samples": 60,
+      "median_ms": 69.6522,
+      "p95_ms": 82.3547,
+      "max_ms": 105.0449,
+      "idle_seconds": 8.001091,
+      "idle_cpu_ms": 32.655,
+      "idle_alloc_bytes": 37200,
+      "idle_callbacks": null,
+      "rss_bytes": 69173248
+    },
+    {
+      "mode": "hook_python_static",
+      "samples": 60,
+      "median_ms": 59.9168,
+      "p95_ms": 73.7422,
+      "max_ms": 77.7495,
+      "idle_seconds": 8.0009024,
+      "idle_cpu_ms": 9.693,
+      "idle_alloc_bytes": 35784,
+      "idle_callbacks": null,
+      "rss_bytes": 77807616
+    },
+    {
+      "mode": "hook_go_static",
+      "samples": 60,
+      "median_ms": 37.1742,
+      "p95_ms": 46.686,
+      "max_ms": 49.8105,
+      "idle_seconds": 7.9999648,
+      "idle_cpu_ms": 9.685,
+      "idle_alloc_bytes": 35328,
+      "idle_callbacks": null,
+      "rss_bytes": 77889536
+    }
+  ],
+  "live_plugin": [
+    {
+      "backend": "python",
+      "test": "one synthetic Stop from /tmp using default log path",
+      "launch_to_post_RaiseEvent_ms": 39.06304,
+      "status": "2026-11-01T18:43:41.3965260+00:00 event_raised",
+      "includes_physical_vibration_latency": false
+    },
+    {
+      "backend": "go",
+      "test": "one synthetic Stop from /tmp using default log path",
+      "launch_to_post_RaiseEvent_ms": 9.388032,
+      "status": "2026-11-01T18:43:41.4084380+00:00 event_raised",
+      "includes_physical_vibration_latency": false
+    }
+  ],
+  "limits": [
+    "Hook-process tests use 5 warmups and 120 interleaved samples per command, shuffled with seed 42; AGENT_HAPTICS_LOG points to a temporary file.",
+    "Full path uses 60 sequential samples per mode with the same monitor and .NET Process.Start launcher, 8 seconds idle and seed42 pauses17-170ms; includes benchmark launcher overhead, not Codex event dispatch or Logitech physical vibration.",
+    "Live tests use each backend default log path from /tmp and reach real Logitech RaiseEvent; one sample each is an integration check, not a distribution.",
+    "Child CPU from RUSAGE_CHILDREN can omit reparented grandchildren such as Git; report as observed accounting rather than total process-tree CPU.",
+    "New hook definitions require Codex trust review; automatic adoption in the current chat has not been established."
+  ]
+}

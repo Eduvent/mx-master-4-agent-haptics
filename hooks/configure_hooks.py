@@ -8,15 +8,19 @@ import shlex
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def hook_command(root=ROOT, backend="python"):
+def hook_command(root=ROOT, backend="go"):
     root = Path(root).resolve()
     if backend == "python":
         return shlex.join(["/usr/bin/python3", str(root / "hooks/record_event.py")])
+    if backend == "go":
+        return shlex.quote(str(root / ".local/bin/record-event"))
     raise ValueError("Unknown hook backend")
 
 
-def configure(root=ROOT, backend="python"):
+def configure(root=ROOT, backend="go"):
     root = Path(root).resolve()
+    if backend == "go" and not (root / ".local/bin/record-event").is_file():
+        raise ValueError("Build .local/bin/record-event before selecting Go")
     path = root / ".codex/hooks.json"
     source = path if path.exists() else root / ".codex/hooks.example.json"
     config = json.loads(source.read_text())
@@ -37,6 +41,6 @@ def configure(root=ROOT, backend="python"):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--backend", choices=["python"], default="python")
+    parser.add_argument("--backend", choices=["python", "go"], default="go")
     args = parser.parse_args()
     print("Updated {} hooks ({})".format(configure(backend=args.backend), args.backend))

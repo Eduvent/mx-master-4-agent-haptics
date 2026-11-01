@@ -6,7 +6,7 @@ using Loupedeck.CodexHapticsPlugin;
 var samples = args.Length > 0 ? int.Parse(args[0]) : 60;
 if (samples < 1) throw new ArgumentException("Sample count must be positive");
 var modes = args.Length > 1 ? args.Skip(1).ToArray() : new[] { "poll250", "poll25", "watcher" };
-if (modes.Any(mode => !new[] { "poll250", "poll25", "watcher", "hook250", "hookwatcher" }.Contains(mode)))
+if (modes.Any(mode => !new[] { "poll250", "poll25", "watcher", "hook250", "hookwatcher", "hook_python_static", "hook_go_static" }.Contains(mode)))
     throw new ArgumentException("Unknown benchmark mode");
 var results = new List<object>();
 foreach (var mode in modes)
@@ -62,7 +62,13 @@ foreach (var mode in modes)
         {
             var info = new ProcessStartInfo("/bin/sh") { UseShellExecute = false, RedirectStandardInput = true, RedirectStandardOutput = true };
             info.ArgumentList.Add("-c");
-            info.ArgumentList.Add("/usr/bin/python3 \"$(git rev-parse --show-toplevel)/hooks/record_event.py\"");
+            var command = mode switch
+            {
+                "hook_python_static" => "/usr/bin/python3 " + ShellQuote(Path.GetFullPath("hooks/record_event.py")),
+                "hook_go_static" => ShellQuote(Path.GetFullPath(".local/bin/record-event")),
+                _ => "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/hooks/record_event.py\""
+            };
+            info.ArgumentList.Add(command);
             info.Environment["AGENT_HAPTICS_LOG"] = path;
             hook = Process.Start(info);
             hook.StandardInput.WriteLine("{\"hook_event_name\":\"Stop\"}");
@@ -87,3 +93,5 @@ foreach (var mode in modes)
     Console.Error.WriteLine($"Completed {mode}");
 }
 Console.WriteLine(JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
+
+static string ShellQuote(string value) => "'" + value.Replace("'", "'\"'\"'") + "'";
