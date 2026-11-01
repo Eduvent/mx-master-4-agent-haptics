@@ -17,9 +17,9 @@ Service y prueba la acción manual. La compilación normal no instala ni recarga
 
 ## Eventos de Codex y Python
 
-Copia `.codex/hooks.example.json` a `.codex/hooks.json` y revisa/confía los hooks
-con `/hooks` en Codex CLI. Requiere `/usr/bin/python3`; la ruta del script se
-resuelve desde Git, incluso si Codex inicia desde un subdirectorio.
+Ejecuta `python3 hooks/configure_hooks.py` para generar `.codex/hooks.json` y revisa/confía los hooks
+con `/hooks` en Codex CLI. Requiere `/usr/bin/python3`; la ruta absoluta del script se
+resuelve al configurar, sin ejecutar Git en cada evento ni depender del directorio actual.
 
 Los hooks registran metadatos permitidos en `.local/events.jsonl`, sin guardar
 mensajes, comandos ni argumentos. El plugin detecta cambios de archivo, con una lectura de respaldo cada segundo y emite `TestPulse` por cada `Stop` completo; ignora el historial al iniciar.
@@ -49,3 +49,10 @@ dotnet run --project tests/latency/Latency.csproj -c Release -- 60 hook250 hookw
 Usan logs temporales, sin vibraciones; las pruebas nativas de FSEvents requieren
 un entorno sin restricciones sobre notificaciones. Los tiempos terminan antes del
 transporte Logitech y la vibración física. Las ventanas cortas de CPU son orientativas.
+
+## Resolver las rutas una vez
+
+El configurador conserva otros handlers/timeouts, usa quoting de shell y no
+reescribe definiciones sin cambios. Repite la configuración si mueves el repo y
+vuelve a confiar en los hooks modificados. El archivo generado con rutas personales
+está ignorado; se versiona la plantilla portable.

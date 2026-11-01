@@ -1,12 +1,12 @@
 {
-  "description": "Codex lifecycle metadata for MX Master 4 haptic notifications.",
+  "description": "Codex lifecycle metadata for MX Master 4 haptic notifications. Generate hooks.json with hooks/configure_hooks.py.",
   "hooks": {
     "PreToolUse": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/hooks/record_event.py\"",
+            "command": "/usr/bin/python3 '/absolute/path/to/repository/hooks/record_event.py'",
             "timeout": 3
           }
         ]
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/hooks/record_event.py\"",
+            "command": "/usr/bin/python3 '/absolute/path/to/repository/hooks/record_event.py'",
             "timeout": 3
           }
         ]
@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/hooks/record_event.py\"",
+            "command": "/usr/bin/python3 '/absolute/path/to/repository/hooks/record_event.py'",
             "timeout": 3
           }
         ]
@@ -39,7 +39,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/hooks/record_event.py\"",
+            "command": "/usr/bin/python3 '/absolute/path/to/repository/hooks/record_event.py'",
             "timeout": 3
           }
         ]
@@ -50,7 +50,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/hooks/record_event.py\"",
+            "command": "/usr/bin/python3 '/absolute/path/to/repository/hooks/record_event.py'",
             "timeout": 3
           }
         ]
@@ -61,7 +61,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/hooks/record_event.py\"",
+            "command": "/usr/bin/python3 '/absolute/path/to/repository/hooks/record_event.py'",
             "timeout": 3
           }
         ]
