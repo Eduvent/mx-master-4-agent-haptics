@@ -1,6 +1,7 @@
 namespace Loupedeck.CodexHapticsPlugin
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Threading;
 
@@ -9,7 +10,7 @@ namespace Loupedeck.CodexHapticsPlugin
     {
         private readonly Object _gate = new();
         private readonly StopEventReader _reader;
-        private readonly Action<Int32> _onStops;
+        private readonly Action<IReadOnlyList<HapticsEventRecord>> _onRecords;
         private readonly Action<Exception> _onError;
         private readonly Timer _timer;
         private FileSystemWatcher _watcher;
@@ -17,10 +18,26 @@ namespace Loupedeck.CodexHapticsPlugin
 
         public StopEventMonitor(String path, Action<Int32> onStops, Action<Exception> onError,
             Int32 reconciliationMs = 1000, Boolean enableNotifications = true)
+            : this(path, onError, reconciliationMs, enableNotifications, records =>
+            {
+                var count = StopEventReader.CountStops(records);
+                if (count > 0) onStops(count);
+            })
+        {
+        }
+
+        // A named factory avoids ambiguous overloads for existing callbacks such as `_ => ...`.
+        public static StopEventMonitor ForRecords(String path,
+            Action<IReadOnlyList<HapticsEventRecord>> onRecords, Action<Exception> onError,
+            Int32 reconciliationMs = 1000, Boolean enableNotifications = true)
+            => new StopEventMonitor(path, onError, reconciliationMs, enableNotifications, onRecords);
+
+        private StopEventMonitor(String path, Action<Exception> onError, Int32 reconciliationMs,
+            Boolean enableNotifications, Action<IReadOnlyList<HapticsEventRecord>> onRecords)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path)));
             this._reader = new StopEventReader(path);
-            this._onStops = onStops;
+            this._onRecords = onRecords;
             this._onError = onError;
             try
             {
@@ -51,8 +68,8 @@ namespace Loupedeck.CodexHapticsPlugin
                 if (this._disposed) return;
                 try
                 {
-                    var count = this._reader.ReadNewStops();
-                    if (count > 0) this._onStops(count);
+                    var records = this._reader.ReadPendingRecords();
+                    if (records.Count > 0) this._onRecords(records);
                 }
                 catch (Exception error) { this._onError(error); }
             }
