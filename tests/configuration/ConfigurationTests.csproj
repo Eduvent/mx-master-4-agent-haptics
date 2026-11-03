@@ -1,0 +1,21 @@
+<Project>
+  <!-- Keep all generated build state outside the checkout. No SDK or NuGet packages are needed. -->
+  <PropertyGroup>
+    <BaseIntermediateOutputPath>$([System.IO.Path]::GetTempPath())codex-haptics-configuration-tests/obj/</BaseIntermediateOutputPath>
+    <BaseOutputPath>$([System.IO.Path]::GetTempPath())codex-haptics-configuration-tests/bin/</BaseOutputPath>
+  </PropertyGroup>
+  <Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../CodexHapticsPlugin/src/HapticsConfiguration.cs" Link="HapticsConfiguration.cs" />
+    <Compile Include="../../CodexHapticsPlugin/src/HapticsConfigurationStore.cs" Link="HapticsConfigurationStore.cs" />
+    <Content Include="../../docs/haptics.example.json" Link="haptics.example.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../docs/haptics.schema.json" Link="haptics.schema.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Import Project="Sdk.targets" Sdk="Microsoft.NET.Sdk" />
+</Project>

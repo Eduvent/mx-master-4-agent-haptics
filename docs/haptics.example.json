@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "enabled": true,
+  "events": {
+    "turn_finished": {
+      "enabled": true,
+      "profile": "completed"
+    },
+    "approval_required": {
+      "enabled": false
+    },
+    "input_required": {
+      "enabled": false
+    }
+  }
+}

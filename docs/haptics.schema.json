@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Configuración háptica de Codex, versión 1",
+  "description": "Solo completed está verificado. Los nombres de atención están reservados y desactivados.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version"],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "events": {
+      "type": "object",
+      "additionalProperties": false,
+      "default": {},
+      "properties": {
+        "turn_finished": {
+          "type": "object",
+          "additionalProperties": false,
+          "default": {"enabled": true, "profile": "completed"},
+          "properties": {
+            "enabled": {"type": "boolean", "default": true},
+            "profile": {"type": "string", "const": "completed", "default": "completed"}
+          }
+        },
+        "approval_required": {"$ref": "#/$defs/reservedEvent"},
+        "input_required": {"$ref": "#/$defs/reservedEvent"}
+      }
+    }
+  },
+  "$defs": {
+    "reservedEvent": {
+      "type": "object",
+      "description": "Sin fuente ni perfil verificados; no admite profile ni enabled: true.",
+      "additionalProperties": false,
+      "default": {"enabled": false},
+      "properties": {
+        "enabled": {"type": "boolean", "const": false, "default": false}
+      }
+    }
+  }
+}
