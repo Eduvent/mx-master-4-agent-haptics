@@ -1,0 +1,105 @@
+{
+  "observed_at_utc": "2026-11-02T23:46:47.948497+00:00",
+  "scope": "S1-S2 software-only Go baseline versus configured dispatch selection; no SDK calls or physical validation",
+  "environment": {
+    "os": "macOS 27.0.1 (26A434), Darwin arm64",
+    "go": "go1.27.1 darwin/arm64",
+    "dotnet_sdk": "10.0.403",
+    "python_benchmark_runner": "Python 3.11.5",
+    "configuration_test_sdk": "8.0.203",
+    "build": "Release for console runners; isolated Debug build for actual plugin",
+    "isolation": "External system-temp baseline git archive and current source snapshot; shared Go binary built only in baseline scratch; external CLI_HOME, NuGet and Go caches. AGENT_HAPTICS_LOG overrides every measured hook event path. Production files, service and mouse untouched."
+  },
+  "origins": {
+    "baseline_commit": "e84f38980ccba812c62cbd01f02178fb09b6f92d",
+    "baseline": "Unmodified archived Program.cs, StopEventReader and StopEventMonitor: ReadNewStops count callback, not the new compatibility adapter",
+    "configured": "Working-tree typed StopEventMonitor.ForRecords + real HapticsConfigurationStore.Snapshot + HapticsEventRouter.BackendEvent, stopping at TestPulse selection",
+    "go_source_sha256_both_trees": "5dc02e4018d51a6cf72f9bd52616e13fd25cd38b960b4932a84da0bb553bc31d",
+    "go_binary_sha256_both_trees": "3f4a2bd9322bcb7e41d2946e2f0e944552b32fece3aaba8ba5d53a0ab219e110",
+    "baseline_program_sha256": "d71871be9840c18600ba01e72a584cae80c2032f50ceed7e73b94cc452fbbb92",
+    "configured_program_sha256": "b26806cac8972d0601f9ffc552938d8484c2eaa4be5084425ec8d562069ef8c9"
+  },
+  "methodology": {
+    "samples_per_path": 60,
+    "order": "One baseline block, then one configured block, then the hook-only diagnostic; not interleaved or counterbalanced",
+    "boundary": "Stopwatch timestamp immediately before Process.Start(/bin/sh -c absolute-Go-path) through count callback (baseline) or TestPulse selection callback (configured). Includes .NET launcher, shell, Go append, native file notification and C# ingestion. Does not wait for hook process exit in measured interval; exit is checked afterward.",
+    "startup": "200 ms settle and 8 s idle before sampling each C# path; no event warmups discarded. Compilation and configuration startup parse excluded.",
+    "pauses": "Random(42), 17-170 ms between samples, one outstanding event at a time",
+    "monitor": "FileSystemWatcher with 1000 ms reconciliation in both paths",
+    "configuration": {
+      "schema_version": 1,
+      "enabled": true,
+      "events": { "turn_finished": { "enabled": true, "profile": "completed" } }
+    },
+    "configuration_io": "Real JSON file parsed once by HapticsConfigurationStore before monitor construction and sample loop; one immutable Snapshot lookup per received batch, no Reload and no Go configuration reads",
+    "percentiles": "C# median_ms is the existing harness lower middle order statistic (30th of 60), not the average of the two central samples; p95 is nearest rank (57th of 60). Python median uses statistics.median.",
+    "outliers": "No samples removed. Baseline maximum 198.9351 ms retained; its cause was not instrumented. No claim that it is configuration cost or that configured routing is faster.",
+    "limits": "Independent sequential processes on a non-dedicated host; JIT, process launch, scheduler and filesystem noise not isolated. No reload timing, concurrent-load timing, real SDK dispatch, Codex event-arrival timing or physical vibration timing. Idle/RSS are diagnostics, not sustained resource estimates."
+  },
+  "baseline_command": "dotnet run --project tests/latency/Latency.csproj -c Release -- 60 hook_go_static",
+  "baseline_stdout": [
+    {
+      "mode": "hook_go_static",
+      "samples": 60,
+      "median_ms": 49.0109,
+      "p95_ms": 57.7614,
+      "max_ms": 198.9351,
+      "idle_seconds": 8.0018176,
+      "idle_cpu_ms": 20.944,
+      "idle_alloc_bytes": 37200,
+      "idle_callbacks": null,
+      "rss_bytes": 67141632
+    }
+  ],
+  "baseline_stderr": "Completed hook_go_static\n",
+  "baseline_exit": 0,
+  "configured_command": "dotnet run --project tests/latency/Latency.csproj -c Release -- 60 hook_go_configured",
+  "configured_stdout": [
+    {
+      "mode": "hook_go_configured",
+      "samples": 60,
+      "median_ms": 47.2425,
+      "p95_ms": 55.2107,
+      "max_ms": 58.2136,
+      "idle_seconds": 8.0006618,
+      "idle_cpu_ms": 20.068,
+      "idle_alloc_bytes": 39040,
+      "idle_callbacks": null,
+      "rss_bytes": 68304896
+    }
+  ],
+  "configured_stderr": "Completed hook_go_configured\n",
+  "configured_exit": 0,
+  "hook_only_command": "python3 tests/benchmark_hook.py --samples 60 --modes go_static",
+  "hook_only_stdout": {
+    "samples_per_mode": 60,
+    "warmups_per_mode": 5,
+    "order": "interleaved, shuffled with seed 42",
+    "boundary": "spawn configured shell through process exit; timestamp metadata precedes file write",
+    "results": [
+      {
+        "mode": "go_static",
+        "samples": 60,
+        "median_ms": 8.859667,
+        "p95_ms": 10.177375,
+        "max_ms": 12.07875,
+        "child_cpu_median_ms": 6.338499999999983,
+        "to_metadata_median_ms": 8.083583999999998
+      }
+    ]
+  },
+  "hook_only_stderr": "",
+  "hook_only_exit": 0,
+  "hook_only_note": "One mode only: the unchanged script's interleaved label is vacuous here. Five warmups plus 60 recorded samples. This is a separate process-exit boundary, not an additional latency to sum with the C# results.",
+  "verification": {
+    "python": "13 tests, OK, zero skips",
+    "configuration": "10 groups; 33 invalid cases; all passed using SDK 8",
+    "reader": "Existing reader/notification suites and nine typed/compatibility/concurrency PASS groups passed",
+    "plugin_doubles": "10 behavior groups passed; no actual SDK calls",
+    "plugin_debug": "Actual PluginApi reference, build succeeded, 0 warnings and 0 errors; scratch output only, no installation/reload",
+    "harness_self_test": "PASS configured dispatch: parsed startup snapshot, TestPulse, both gates, unrelated event, history, no replay; PASS preserved legacy count consumption",
+    "preservation_command_both_trees": "dotnet run --project tests/latency/Latency.csproj -c Release -- 1 poll250 poll25 watcher hook250 hookwatcher hook_python_static hook_go_static",
+    "preservation": "All seven existing modes exited 0 with identical stderr completion lines and matching JSON schema/mode/sample count/callback nullability. Raw stdout timing/resource values differ and were retained separately; these one-sample smoke checks are not latency distributions. GIT_DIR plus per-tree GIT_WORK_TREE made legacy Git-resolving modes use each isolated source tree without changing baseline source. No production CLI parser/helper was edited.",
+    "initial_failures": "Self-test RED was CS0103 for missing DispatchConfigured (compile-level, not behavioral RED). First configuration validation failed MSB3030 because the scratch snapshot omitted the public example/schema; after copying those unchanged fixtures, the same command passed. An initially overstrict differential assertion equated measured idle_callbacks; poll25 observed 321 baseline versus 320 current in separate timed windows. The corrected structural check on the same captured results passed; the raw difference was not normalized away."
+  }
+}

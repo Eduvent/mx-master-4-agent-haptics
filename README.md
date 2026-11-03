@@ -142,6 +142,8 @@ Se cubren el contrato de ambos hooks, omisión de contenido privado, entradas in
 
 En 120 muestras alternadas por variante, el comando completo tuvo medianas de **37,0 ms** con Python + Git, **28,6 ms** con Python sin Git y **6,7 ms** con Go sin Git. El salto a Go redujo aproximadamente un 77 % frente a Python sin Git. Son mediciones de software de este equipo, no del movimiento físico del mouse.
 
+La comparación aislada de configuración usó el baseline real `e84f389` y el mismo binario Go en temporales: **60 muestras por ruta**, p50/p95 **49,0109/57,7614 ms** hasta el callback por conteo anterior y **47,2425/55,2107 ms** hasta seleccionar `TestPulse` con registros tipados, snapshot de configuración y router real. La configuración se analiza una vez al iniciar, fuera del intervalo. Son bloques secuenciales con ruido de arranque/notificaciones, no prueba de aceleración ni de vibración física; no se tocó el log ni el plugin en producción. El nuevo modo `hook_go_configured` y `--self-test` del runner permiten repetirlo sin SDK.
+
 [Metodología, límites, resultados y benchmarks reproducibles](docs/performance.md). Los logs, cachés y binarios locales quedan fuera de Git; se conservan las pruebas y los resultados de comparación útiles para repetir el experimento.
 
 ## Diagnóstico experimental de mensajes

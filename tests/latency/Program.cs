@@ -3,10 +3,22 @@ using System.Text.Json;
 using Loupedeck.CodexHapticsPlugin;
 
 // Isolated file: never sends events to Logitech or modifies the live log.
+if (args.SequenceEqual(new[] { "--help" }))
+{
+    Console.WriteLine("Usage: Latency [positive-samples=60] [poll250 poll25 watcher hook250 hookwatcher hook_python_static hook_go_static hook_go_configured ...]");
+    Console.WriteLine("Latency --self-test: deterministic isolated configuration-routing checks; no SDK calls.");
+    Console.WriteLine("hook_go_configured: Go shell spawn to TestPulse selection, configuration parsed once at startup.");
+    return;
+}
+if (args.SequenceEqual(new[] { "--self-test" }))
+{
+    RunConfiguredSelfTest();
+    return;
+}
 var samples = args.Length > 0 ? int.Parse(args[0]) : 60;
 if (samples < 1) throw new ArgumentException("Sample count must be positive");
 var modes = args.Length > 1 ? args.Skip(1).ToArray() : new[] { "poll250", "poll25", "watcher" };
-if (modes.Any(mode => !new[] { "poll250", "poll25", "watcher", "hook250", "hookwatcher", "hook_python_static", "hook_go_static" }.Contains(mode)))
+if (modes.Any(mode => !new[] { "poll250", "poll25", "watcher", "hook250", "hookwatcher", "hook_python_static", "hook_go_static", "hook_go_configured" }.Contains(mode)))
     throw new ArgumentException("Unknown benchmark mode");
 var results = new List<object>();
 foreach (var mode in modes)
@@ -33,9 +45,22 @@ foreach (var mode in modes)
     watcher.Renamed += (_, _) => Read();
     var fullHook = mode.StartsWith("hook");
     watcher.EnableRaisingEvents = mode == "watcher";
-    using var monitor = fullHook ? new StopEventMonitor(path,
-        _ => { lock (gate) pending?.TrySetResult(Stopwatch.GetTimestamp()); },
-        error => Console.Error.WriteLine(error), mode == "hook250" ? 250 : 1000, mode != "hook250") : null;
+    HapticsConfigurationStore store = null;
+    if (mode == "hook_go_configured")
+    {
+        var configPath = Path.Combine(directory, "haptics.json");
+        File.WriteAllText(configPath, "{\"schema_version\":1,\"enabled\":true,\"events\":{\"turn_finished\":{\"enabled\":true,\"profile\":\"completed\"}}}");
+        store = new HapticsConfigurationStore(configPath);
+        if (store.Diagnostic != null) throw new Exception(store.Diagnostic);
+    }
+    void Complete() { lock (gate) pending?.TrySetResult(Stopwatch.GetTimestamp()); }
+    using var monitor = mode == "hook_go_configured"
+        ? StopEventMonitor.ForRecords(path,
+            records => DispatchConfigured(store, records, _ => Complete()),
+            error => Console.Error.WriteLine(error))
+        : fullHook ? new StopEventMonitor(path,
+            _ => Complete(), error => Console.Error.WriteLine(error),
+            mode == "hook250" ? 250 : 1000, mode != "hook250") : null;
     using var timer = new Timer(_ => Read(), null, (mode == "watcher" || fullHook) ? Timeout.Infinite : mode == "poll25" ? 25 : 250,
         (mode == "watcher" || fullHook) ? Timeout.Infinite : mode == "poll25" ? 25 : 250);
     await Task.Delay(200);
@@ -65,7 +90,7 @@ foreach (var mode in modes)
             var command = mode switch
             {
                 "hook_python_static" => "/usr/bin/python3 " + ShellQuote(Path.GetFullPath("hooks/record_event.py")),
-                "hook_go_static" => ShellQuote(Path.GetFullPath(".local/bin/record-event")),
+                "hook_go_static" or "hook_go_configured" => ShellQuote(Path.GetFullPath(".local/bin/record-event")),
                 _ => "/usr/bin/python3 \"$(git rev-parse --show-toplevel)/hooks/record_event.py\""
             };
             info.ArgumentList.Add(command);
@@ -95,3 +120,55 @@ foreach (var mode in modes)
 Console.WriteLine(JsonSerializer.Serialize(results, new JsonSerializerOptions { WriteIndented = true }));
 
 static string ShellQuote(string value) => "'" + value.Replace("'", "'\"'\"'") + "'";
+
+static void DispatchConfigured(HapticsConfigurationStore store,
+    IReadOnlyList<HapticsEventRecord> records, Action<string> dispatch)
+{
+    var snapshot = store.Snapshot;
+    foreach (var record in records)
+    {
+        var backendEvent = HapticsEventRouter.BackendEvent(snapshot, record);
+        if (backendEvent != null) dispatch(backendEvent);
+    }
+}
+
+static void RunConfiguredSelfTest()
+{
+    var directory = Path.Combine(Path.GetTempPath(), "haptics-bench-test-" + Guid.NewGuid());
+    Directory.CreateDirectory(directory);
+    try
+    {
+        var path = Path.Combine(directory, "events.jsonl");
+        var configPath = Path.Combine(directory, "haptics.json");
+        foreach (var (json, expected) in new[]
+        {
+            ("{\"schema_version\":1,\"events\":{\"turn_finished\":{\"profile\":\"completed\"}}}", 1),
+            ("{\"schema_version\":1,\"enabled\":false}", 0),
+            ("{\"schema_version\":1,\"events\":{\"turn_finished\":{\"enabled\":false}}}", 0)
+        })
+        {
+            File.WriteAllText(configPath, json);
+            var store = new HapticsConfigurationStore(configPath);
+            if (store.Diagnostic != null) throw new Exception(store.Diagnostic);
+            var snapshot = store.Snapshot;
+            File.WriteAllText(configPath, "invalid after startup");
+            File.WriteAllText(path, "{\"event\":\"Stop\"}\n"); // History must not dispatch.
+            var reader = new StopEventReader(path);
+            File.AppendAllText(path, "{\"event\":\"PermissionRequest\"}\n{\"event\":\"Stop\",\"session_id\":\"test\"}\n");
+            var outputs = new List<string>();
+            DispatchConfigured(store, reader.ReadPendingRecords(), outputs.Add);
+            DispatchConfigured(store, reader.ReadPendingRecords(), outputs.Add); // No replay.
+            if (outputs.Count != expected || outputs.Any(value => value != "TestPulse") ||
+                !ReferenceEquals(snapshot, store.Snapshot) || store.Diagnostic != null)
+                throw new Exception("Configured dispatch must use the startup snapshot and honor gates/history.");
+        }
+        File.WriteAllText(path, "");
+        var countReader = new StopEventReader(path);
+        File.AppendAllText(path, "{\"event\":\"Stop\"}\n{\"event\":\"PermissionRequest\"}\n");
+        if (countReader.ReadNewStops() != 1 || countReader.ReadNewStops() != 0)
+            throw new Exception("Legacy count mode must still consume Stop once.");
+        Console.WriteLine("PASS configured dispatch: parsed startup snapshot, TestPulse, both gates, unrelated event, history, no replay");
+        Console.WriteLine("PASS preserved legacy count consumption");
+    }
+    finally { Directory.Delete(directory, true); }
+}
