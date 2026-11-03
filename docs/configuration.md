@@ -1,7 +1,5 @@
 # Configuración háptica versionada
 
-> Cadena de entrega: esta unidad incorpora el contrato puro de configuración. La integración y la acción Logitech descritas abajo se entregan en la siguiente unidad del plugin.
-
 El plugin carga y valida una configuración local al iniciar y mediante la acción **Recargar configuración háptica** del grupo **Codex** en Logitech. Solo controla señales automáticas; **Probar vibración** sigue emitiendo `TestPulse` independientemente de los interruptores de configuración.
 
 ## Archivo y valores predeterminados
